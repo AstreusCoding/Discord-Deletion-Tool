@@ -31,40 +31,42 @@ class MyClient(discord.Client):
         """
         Retrieve all messages in the DM conversation with a specific user
         and save them into an excel spreadsheet.
-
         Args:
             user_id: The Discord user ID to get the DM conversation for
 
         Returns:
             A list of message objects in the DM conversation
         """
-    # Get the user and ensure a DM channel exists
-    user = self.get_user(user_id)
-    if not user:
-        logger.error(f"User with id {user_id} not found.")
-        return []
-    dm_channel = user.dm_channel
-    if dm_channel is None:
-        dm_channel = await user.create_dm()
+        # make sure the user_id was passed as an integer
+        if not isinstance(user_id, int):
+            logger.error("User ID must be an integer.")
+        # Get the user and ensure a DM channel exists
+        user = self.get_user(user_id)
+        if not user:
+            logger.error(f"User with id {user_id} not found.")
+            return []
+        dm_channel = user.dm_channel
+        if dm_channel is None:
+            dm_channel = await user.create_dm()
 
-    all_messages = []
-    last_message = None
+        all_messages = []
+        last_message = None
 
-    # Use pagination to retrieve messages in batches of 100
-    while True:
-        kwargs = {'limit': 100}
-        if last_message:
-            kwargs['before'] = last_message  # pass the message object
+        # Use pagination to retrieve messages in batches of 100
+        while True:
+            kwargs = {'limit': 100}
+            if last_message:
+                kwargs['before'] = last_message  # pass the message object
 
-        messages = [msg async for msg in dm_channel.history(**kwargs)]
-        if not messages:
-            break
-        all_messages.extend(messages)
-        last_message = messages[-1]
+            messages = [msg async for msg in dm_channel.history(**kwargs)]
+            if not messages:
+                break
+            all_messages.extend(messages)
+            last_message = messages[-1]
 
-        logger.info(
-            f'Total messages from user {user_id} found: {len(all_messages)}'
-        )
+            logger.info(
+                f'Total messages from user {user_id} found: {len(all_messages)}'
+            )
 
         # Save messages to an Excel spreadsheet using pandas
         if pd is None:
